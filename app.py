@@ -193,6 +193,23 @@ def plot_and_display_stats(title, y_label, data, stats_dict):
     for stat, value in stats_dict.items():
         st.write(f"**{stat}:** {value:.2f}")
 
+# Create a new DataFrame row for the predicted price
+predicted_date = data_filtered.index[-1] + pd.Timedelta(days=1)  # Add one day to the last date
+predicted_data = pd.DataFrame({'Close': predicted_price[0][0]}, index=[predicted_date])
+
+# Concatenate the predicted data with the original DataFrame
+data_with_prediction = pd.concat([data_filtered, predicted_data])
+
+# Plot the graph with the predicted price
+fig, ax = plt.subplots(figsize=(12, 6))
+ax.plot(data_with_prediction['Close'][:-1], color='blue', label='Actual Price')  # Plot actual prices in blue
+ax.plot(data_with_prediction['Close'][-1:], color='green', marker='o', markersize=10, label='Predicted Price')  # Plot predicted price in green
+
+ax.set_xlabel('Date')
+ax.set_ylabel('Price (Rs.)')
+ax.set_title('Predicted Price vs. Actual Closing Price')
+ax.legend()
+st.pyplot(fig)
 # Display Technical Indicators (without graphs)
 st.header("📊 Key Technical Indicators")
 st.write("Here are the latest values for key technical indicators:")
@@ -201,6 +218,7 @@ st.write(f"**OBV (On-Balance Volume):** {data_filtered['OBV'].iloc[-1]:.2f}")
 st.write(f"**ADX (Average Directional Index):** {data_filtered['ADX'].iloc[-1]:.2f}")
 st.write(f"**MFI (Money Flow Index):** {data_filtered['MFI'].iloc[-1]:.2f}")
 st.write(f"**RSI (Relative Strength Index):** {data_filtered['RSI'].iloc[-1]:.2f}")
+
 
 # Moving Averages Plot
 plot_and_display_stats(
