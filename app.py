@@ -35,7 +35,7 @@ start = datetime(end.year - 20, end.month, end.day)
 
 # Attempt to load stock data
 try:
-    data = yf.download(stock, start=start, end=end)
+    data = yf.download(stock, start=start, end=end, tz='Asia/Kolkata')
     if data.empty:
         st.warning(f"No data found for the ticker symbol '{stock}'. Please try a different one.")
         st.stop()
