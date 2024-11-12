@@ -43,6 +43,7 @@ try:
         st.stop()
     else:
         st.sidebar.success(f"Successfully loaded data for {stock}.")
+        print(data.head())
 except Exception as e:
     st.sidebar.error(f"Failed to download stock data: {e}")
     st.stop()
