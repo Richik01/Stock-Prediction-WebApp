@@ -6,17 +6,28 @@ import matplotlib.pyplot as plt
 import yfinance as yf
 from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime
+import os
+
+# Function to load CSS
+def load_css():
+    css_file = "style.css"  # Assuming 'style.css' is in the same directory as the Streamlit script
+    with open(css_file) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+# Load the CSS
+load_css()
 
 # App title and description
 st.title("📈 Stock Price Predictor App")
 st.markdown("""
-This app uses a pre-trained model to predict stock prices.
+This app uses a LSTM trained on NSE data to predict stock prices.
 It also displays the stock's historical moving averages and technical indicators.
+Popular Tickers: TATASTEEL.NS, ASIANPAINT.NS, TSLA, AAPL
 """)
 
 # User input for stock ticker
-st.sidebar.header("Stock Selection")
-stock = st.sidebar.text_input("Enter the Stock Ticker (e.g., AAPL, MSFT)", "^NSEI")
+st.sidebar.header("Select Stock")
+stock = st.sidebar.text_input("Enter a Stock Ticker", "^NSEI")
 
 # Date settings
 end = datetime.now()
@@ -51,8 +62,8 @@ if len(scaled_data) >= 100:
     predicted_price = model.predict(last_100_days)
     predicted_price = scaler.inverse_transform(predicted_price)
     
-    st.subheader("📊 Prediction for Tomorrow's Price")
-    st.write(f"**${predicted_price[0][0]:.2f}**")
+    st.subheader("📊 Prediction for Tomorrow's Price/Points")
+    st.write(f"**\*Rs. {predicted_price[0][0]:.2f}**")
 else:
     st.warning("Not enough data points to perform prediction. Please select a longer date range or different stock ticker.")
 
@@ -60,34 +71,41 @@ else:
 st.subheader("📅 Stock Data")
 st.write(data.tail())
 
-# Settings for technical indicators
-st.sidebar.header("Technical Indicator Settings")
-ma_short = st.sidebar.number_input("Short-term MA Window:", min_value=1, max_value=200, value=50)
-ma_long = st.sidebar.number_input("Long-term MA Window:", min_value=1, max_value=500, value=200)
-rsi_window = st.sidebar.number_input("RSI Window:", min_value=1, max_value=100, value=14)
-bb_window = st.sidebar.number_input("Bollinger Bands Window:", min_value=1, max_value=100, value=20)
-bb_std_dev = st.sidebar.number_input("Bollinger Bands Std Dev:", min_value=1, max_value=3, value=2)
-macd_short = st.sidebar.number_input("MACD Short Window:", min_value=1, max_value=50, value=12)
-macd_long = st.sidebar.number_input("MACD Long Window:", min_value=1, max_value=50, value=26)
-macd_signal = st.sidebar.number_input("MACD Signal Window:", min_value=1, max_value=50, value=9)
-
 # Time period selection for graph
 st.sidebar.header("Graph Time Period")
 graph_period = st.sidebar.selectbox("Select Time Period for Graphs:", ["1 Year", "3 Years", "5 Years", "Max"])
 
-# Filter data based on selected period
+# Settings for technical indicators
+st.sidebar.header("Technical Indicator Settings")
+ma_short = st.sidebar.number_input("Short-term MA Window:", min_value=1, max_value=200, value=10)
+ma_long = st.sidebar.number_input("Long-term MA Window:", min_value=1, max_value=500, value=40)
+rsi_window = st.sidebar.number_input("RSI Window:", min_value=1, max_value=100, value=20)
+bb_window = st.sidebar.number_input("Bollinger Bands Window:", min_value=1, max_value=100, value=20)
+bb_std_dev = st.sidebar.number_input("Bollinger Bands Std Dev:", min_value=1, max_value=3, value=2)
+macd_short = st.sidebar.number_input("MACD Short Window:", min_value=1, max_value=300, value=50)
+macd_long = st.sidebar.number_input("MACD Long Window:", min_value=1, max_value=300, value=100)
+macd_signal = st.sidebar.number_input("MACD Signal Window:", min_value=1, max_value=50, value=9)
+stochastic_rsi_window = st.sidebar.number_input("Stochastic RSI Window:", min_value=1, max_value=100, value=14)
+k_period = st.sidebar.number_input("Stochastic RSI %K Period:", min_value=1, max_value=50, value=3)
+d_period = st.sidebar.number_input("Stochastic RSI %D Period:", min_value=1, max_value=50, value=3)
+williams_r_window = st.sidebar.number_input("Williams %R Window:", min_value=1, max_value=100, value=14)
+
+
+# Filter data based on selected period (substracting no. of TRADING days)
 if graph_period == "1 Year":
-    data_filtered = data[-252:]  # Approx. last 252 trading days
+    data_filtered = data[-252:]
 elif graph_period == "3 Years":
-    data_filtered = data[-756:]  # Approx. last 756 trading days
+    data_filtered = data[-756:]
 elif graph_period == "5 Years":
-    data_filtered = data[-1260:]  # Approx. last 1260 trading days
+    data_filtered = data[-1260:]
 else:
     data_filtered = data  # Use entire data
 
 # Calculate Moving Averages
 data_filtered['MA_Short'] = data_filtered['Close'].rolling(window=ma_short).mean()
 data_filtered['MA_Long'] = data_filtered['Close'].rolling(window=ma_long).mean()
+
+
 
 # Relative Strength Index (RSI)
 def calculate_rsi(data, window):
@@ -123,7 +141,47 @@ data_filtered['ATR'] = calculate_atr(data_filtered)
 # On-Balance Volume (OBV)
 data_filtered['OBV'] = (np.sign(data_filtered['Close'].diff()) * data_filtered['Volume']).cumsum()
 
-# Plotting with statistics below each graph
+# Additional Technical Indicators
+def calculate_adx(data, window=14):
+    plus_dm = data['High'].diff()
+    minus_dm = -data['Low'].diff()
+    tr = pd.concat([data['High'].diff(), data['Low'].diff(), data['Close'].diff().abs()], axis=1).max(axis=1)
+    plus_di = 100 * (plus_dm.rolling(window=window).sum() / tr)
+    minus_di = 100 * (minus_dm.rolling(window=window).sum() / tr)
+    dx = (abs(plus_di - minus_di) / (plus_di + minus_di)) * 100
+    adx = dx.rolling(window=window).mean()
+    return adx
+
+data_filtered['ADX'] = calculate_adx(data_filtered)
+
+# Money Flow Index (MFI)
+def calculate_mfi(data, window=14):
+    typical_price = (data['High'] + data['Low'] + data['Close']) / 3
+    money_flow = typical_price * data['Volume']
+    positive_flow = money_flow.where(typical_price > typical_price.shift(), 0)
+    negative_flow = money_flow.where(typical_price < typical_price.shift(), 0)
+    mfi = 100 * (positive_flow.rolling(window=window).sum() / negative_flow.rolling(window=window).sum())
+    return mfi
+
+data_filtered['MFI'] = calculate_mfi(data_filtered)
+
+def calculate_stochastic_rsi(data, window=14, k_period=3, d_period=3):
+    rsi = calculate_rsi(data, window)
+    rsi_min = rsi.rolling(window=k_period).min()
+    rsi_max = rsi.rolling(window=k_period).max()
+    k = 100 * (rsi - rsi_min) / (rsi_max - rsi_min)
+    d = k.rolling(window=d_period).mean()
+    return k, d
+
+def calculate_williams_r(data, window=14):
+    high_high = data['High'].rolling(window=window).max()
+    low_low = data['Low'].rolling(window=window).min()
+    return -100 * (high_high - data['Close']) / (high_high - low_low)
+
+data_filtered['%K'], data_filtered['%D'] = calculate_stochastic_rsi(data_filtered, stochastic_rsi_window, k_period, d_period)
+data_filtered['Williams_R'] = calculate_williams_r(data_filtered, williams_r_window)
+
+# Plotting and displaying stats below the graphs
 def plot_and_display_stats(title, y_label, data, stats_dict):
     st.subheader(title)
     fig, ax = plt.subplots(figsize=(15, 6))
@@ -135,21 +193,30 @@ def plot_and_display_stats(title, y_label, data, stats_dict):
     for stat, value in stats_dict.items():
         st.write(f"**{stat}:** {value:.2f}")
 
+# Display Technical Indicators (without graphs)
+st.header("📊 Key Technical Indicators")
+st.write("Here are the latest values for key technical indicators:")
+st.write(f"**ATR (Average True Range):** {data_filtered['ATR'].iloc[-1]:.2f}")
+st.write(f"**OBV (On-Balance Volume):** {data_filtered['OBV'].iloc[-1]:.2f}")
+st.write(f"**ADX (Average Directional Index):** {data_filtered['ADX'].iloc[-1]:.2f}")
+st.write(f"**MFI (Money Flow Index):** {data_filtered['MFI'].iloc[-1]:.2f}")
+st.write(f"**RSI (Relative Strength Index):** {data_filtered['RSI'].iloc[-1]:.2f}")
+
 # Moving Averages Plot
 plot_and_display_stats(
-    "📊 Moving Averages",
+    "📊 Moving Average Crossover",
     "Price",
     {"Close Price": data_filtered['Close'], f"{ma_short}-day MA": data_filtered['MA_Short'], f"{ma_long}-day MA": data_filtered['MA_Long']},
     {"Short-term MA": data_filtered['MA_Short'].iloc[-1], "Long-term MA": data_filtered['MA_Long'].iloc[-1]}
 )
 
-# RSI Plot
 plot_and_display_stats(
     "📈 Relative Strength Index (RSI)",
     "RSI Value",
     {"RSI": data_filtered['RSI']},
     {"RSI Value": data_filtered['RSI'].iloc[-1]}
 )
+
 
 # Bollinger Bands Plot
 plot_and_display_stats(
@@ -167,44 +234,23 @@ plot_and_display_stats(
     {"MACD": data_filtered['MACD'].iloc[-1], "Signal Line": data_filtered['Signal_Line'].iloc[-1]}
 )
 
-# ATR Plot
+# Stochastic RSI Plot
 plot_and_display_stats(
-    "📈 Average True Range (ATR)",
-    "ATR Value",
-    {"ATR": data_filtered['ATR']},
-    {"ATR Value": data_filtered['ATR'].iloc[-1]}
+    "Stochastic RSI",
+    "RSI Value",
+    {"%K": data_filtered['%K'], "%D": data_filtered['%D']},
+    {"%K": data_filtered['%K'].iloc[-1], "%D": data_filtered['%D'].iloc[-1]}
 )
 
-# OBV Plot
+# Williams %R Plot
 plot_and_display_stats(
-    "📈 On-Balance Volume (OBV)",
-    "OBV Value",
-    {"OBV": data_filtered['OBV']},
-    {"OBV": data_filtered['OBV'].iloc[-1]}
+    "Williams %R",
+    "Williams %R Value",
+    {"Williams %R": data_filtered['Williams_R']},
+    {"Williams %R": data_filtered['Williams_R'].iloc[-1]}
 )
 
-# Preparing and plotting original vs predicted prices
-scaled_data = scaler.fit_transform(pd.DataFrame(data['Close']))
-x_data, y_data = [], []
-for i in range(100, len(scaled_data)):
-    x_data.append(scaled_data[i-100:i])
-    y_data.append(scaled_data[i])
 
-x_data, y_data = np.array(x_data), np.array(y_data)
-predictions = model.predict(x_data)
-inv_predictions = scaler.inverse_transform(predictions)
-inv_y_test = scaler.inverse_transform(y_data)
 
-# Plot original vs predicted values
-plotting_data = pd.DataFrame({
-    "Original": inv_y_test.reshape(-1),
-    "Predicted": inv_predictions.reshape(-1)
-}, index=data.index[100:])
 
-st.subheader("📉 Original vs Predicted Close Prices")
-fig_pred, ax_pred = plt.subplots(figsize=(15, 6))
-ax_pred.plot(data['Close'], label="Actual Data", color="blue", linewidth=1.5)
-ax_pred.plot(plotting_data['Original'], label="Original Test Data", color="green", linestyle="--")
-ax_pred.plot(plotting_data['Predicted'], label="Predicted Data", color="red", linestyle="--")
-ax_pred.legend()
-st.pyplot(fig_pred)
+

@@ -1,0 +1,87 @@
+/* General Body Styles */
+body {
+    background-color: #121212;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* App Title */
+h1 {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #FF6600;
+    text-align: center;
+}
+
+/* Subheaders */
+h2 {
+    color: #FF6600;
+    font-size: 1.5em;
+    margin-top: 20px;
+    text-align: left;
+}
+
+/* Sidebar Styles */
+.sidebar .sidebar-content {
+    background-color: #1F1F1F;
+    color: white;
+}
+
+.sidebar .sidebar-header {
+    background-color: #333333;
+    color: white;
+}
+
+/* Interactive Buttons & Inputs */
+.stButton, .stTextInput input, .stSelectbox select, .stNumberInput input {
+    background-color: #333333;
+    color: white;
+    border: 1px solid #555555;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.stButton:hover, .stTextInput input:hover, .stSelectbox select:hover, .stNumberInput input:hover {
+    background-color: #FF6600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+/* Hover Effects for Plots */
+.stPlotlyChart, .stMatplotlib {
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+.stPlotlyChart:hover, .stMatplotlib:hover {
+    transform: scale(1.05);
+}
+
+/* Add Transition on Load */
+.stApp {
+    animation: fadeIn 1s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #555555;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #FF6600;
+}
