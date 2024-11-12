@@ -30,10 +30,10 @@ Popular Tickers: TATASTEEL.NS, ASIANPAINT.NS, TSLA, AAPL
 st.sidebar.header("Select Stock")
 stock = st.sidebar.text_input("Enter a Stock Ticker", "^NSEI")
 
-timezone = pytz.timezone("US/Pacific")
+# timezone = pytz.utc
 # Date settings
-end = datetime.now(timezone)
-start = datetime(end.year - 20, end.month, end.day, tzinfo=timezone)
+end = datetime.now()
+start = datetime(end.year - 20, end.month, end.day)
 
 # Attempt to load stock data
 try:
