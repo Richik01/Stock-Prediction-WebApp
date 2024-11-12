@@ -49,11 +49,17 @@ except Exception as e:
     st.stop()
 
 # Load pre-trained model
-try:
-    model = load_model("model.keras")
-except Exception as e:
-    st.error(f"Error loading the model: {e}")
+model_file = "model.keras"
+if os.path.exists(model_file):
+    try:
+        model = load_model(model_file)
+    except Exception as e:
+        st.error(f"Error loading the model: {e}")
+        st.stop()
+else:
+    st.error("Model file not found. Please ensure 'model.keras' is in the same directory.")
     st.stop()
+
 
 # Prediction using the entire data
 x_test = pd.DataFrame(data['Close'])
@@ -122,8 +128,8 @@ data_filtered['RSI'] = calculate_rsi(data_filtered, rsi_window)
 
 # Bollinger Bands
 data_filtered['BB_Middle'] = data_filtered['Close'].rolling(window=bb_window).mean()
-data_filtered['BB_Upper'] = data_filtered['BB_Middle'] + bb_std_dev * data_filtered['Close'].rolling(window=bb_window).std()
-data_filtered['BB_Lower'] = data_filtered['BB_Middle'] - bb_std_dev * data_filtered['Close'].rolling(window=bb_window).std()
+data_filtered['BB_Upper'] = data_filtered['BB_Middle'] + (bb_std_dev * data_filtered['Close'].rolling(window=bb_window).std())
+data_filtered['BB_Lower'] = data_filtered['BB_Middle'] - (bb_std_dev * data_filtered['Close'].rolling(window=bb_window).std())
 
 # MACD
 data_filtered['EMA_Short'] = data_filtered['Close'].ewm(span=macd_short, adjust=False).mean()
