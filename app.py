@@ -39,7 +39,7 @@ start = datetime(end.year - 20, end.month, end.day)
 try:
     data = yf.download(stock, start=start, end=end)
     # Remove the second row
-    data = data.drop(data.index[1])
+    data = data.drop(data.index[1]).reset_index(drop=True)
 
     if data.empty:
         st.warning(f"No data found for the ticker symbol '{stock}'. Please try a different one.")
