@@ -7,6 +7,7 @@ import yfinance as yf
 from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime
 import os
+import pytz
 
 # Function to load CSS
 def load_css():
@@ -29,9 +30,10 @@ Popular Tickers: TATASTEEL.NS, ASIANPAINT.NS, TSLA, AAPL
 st.sidebar.header("Select Stock")
 stock = st.sidebar.text_input("Enter a Stock Ticker", "^NSEI")
 
+timezone = pytz.timezone("Asia/Kolkata")
 # Date settings
-end = datetime.now()
-start = datetime(end.year - 20, end.month, end.day)
+end = datetime.now(timezone)
+start = datetime(end.year - 20, end.month, end.day, tzinfo=timezone)
 
 # Attempt to load stock data
 try:
