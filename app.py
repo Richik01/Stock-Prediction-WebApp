@@ -30,7 +30,7 @@ Popular Tickers: TATASTEEL.NS, ASIANPAINT.NS, TSLA, AAPL
 st.sidebar.header("Select Stock")
 stock = st.sidebar.text_input("Enter a Stock Ticker", "^NSEI")
 
-timezone = pytz.timezone("Asia/Kolkata")
+timezone = pytz.timezone("US/Pacific")
 # Date settings
 end = datetime.now(timezone)
 start = datetime(end.year - 20, end.month, end.day, tzinfo=timezone)
